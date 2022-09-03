@@ -9,6 +9,7 @@ _logger = logging.getLogger(__name__)
 
 class AttachmentQueue(models.Model):
     _name = "attachment.queue"
+    _description = "Attachment Queue"
     _inherits = {"ir.attachment": "attachment_id"}
     _inherit = ["mail.thread"]
 
@@ -16,26 +17,33 @@ class AttachmentQueue(models.Model):
         "ir.attachment",
         required=True,
         ondelete="cascade",
-        help="Link to ir.attachment model ",
+        help="Link to the related ir.attachment model",
     )
     file_type = fields.Selection(
         selection=[],
-        help="The file type determines an import method to be used "
-        "to parse and transform data before their import in ERP or an export",
+        help="Operations are realized on 'Attachments Queues' objects depending on "
+        "their 'File Type' value.",
     )
-    date_done = fields.Datetime()
+    done_date = fields.Datetime()
+    done_uid = fields.Many2one("res.users")
     state = fields.Selection(
-        [("pending", "Pending"), ("failed", "Failed"), ("done", "Done")],
+        [
+            ("pending", "Pending"),
+            ("done", "Done"),
+            ("failed", "Failed"),
+            ("cancel", "Cancelled"),
+        ],
         readonly=False,
         required=True,
         default="pending",
+        track_visibility="onchange",
     )
-    state_message = fields.Text()
+    error_message = fields.Text()
     failure_emails = fields.Char(
         compute="_compute_failure_emails",
         string="Failure Emails",
         help="Comma-separated list of email addresses to be notified in case of"
-             "failure",
+        "operation failure on an 'Attachment Queue' object.",
     )
 
     def _compute_failure_emails(self):
@@ -67,15 +75,11 @@ class AttachmentQueue(models.Model):
         """
         Run the process for each attachment queue
         """
-        failure_tmpl = self.env.ref(
-            "attachment_queue.attachment_failure_notification"
-        )
+        failure_tmpl = self.env.ref("attachment_queue.attachment_failure_notification")
         for attachment in self:
             with api.Environment.manage():
                 with registry(self.env.cr.dbname).cursor() as new_cr:
-                    new_env = api.Environment(
-                        new_cr, self.env.uid, self.env.context
-                    )
+                    new_env = api.Environment(new_cr, self.env.uid, self.env.context)
                     attach = attachment.with_env(new_env)
                     try:
                         attach._run()
@@ -83,9 +87,7 @@ class AttachmentQueue(models.Model):
                     except Exception as e:
                         attach.env.cr.rollback()
                         _logger.exception(str(e))
-                        attach.write(
-                            {"state": "failed", "state_message": str(e)}
-                        )
+                        attach.write({"state": "failed", "error_message": str(e)})
                         emails = attach.failure_emails
                         if emails:
                             failure_tmpl.send_mail(attach.id)
@@ -93,7 +95,8 @@ class AttachmentQueue(models.Model):
                     else:
                         vals = {
                             "state": "done",
-                            "date_done": fields.Datetime.now(),
+                            "done_date": fields.Datetime.now(),
+                            "done_uid": self.env.user.id,
                         }
                         attach.write(vals)
                         attach.env.cr.commit()
@@ -103,9 +106,10 @@ class AttachmentQueue(models.Model):
         self.ensure_one()
         _logger.info("Starting processing of attachment queue id %d", self.id)
 
-    def set_done(self):
-        """
-        Manually set to done
-        """
-        message = "Manually set to done by %s" % self.env.user.name
-        self.write({"state_message": message, "state": "done"})
+    def cancel(self):
+        """Manually cancel operation on attachment"""
+        self.write({"state": "cancel"})
+
+    def reset_pending(self):
+        """Manually reset state to "Pending" """
+        self.write({"state": "pending"})

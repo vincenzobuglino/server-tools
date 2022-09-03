@@ -5,16 +5,14 @@ from odoo import api
 from odoo.tests.common import TransactionCase
 
 
-class TestAttachmentBaseQueue(TransactionCase):
+class TestAttachmentQueue(TransactionCase):
     def setUp(self):
         super().setUp()
         self.registry.enter_test_mode(self.env.cr)
         self.env = api.Environment(
             self.registry.test_cr, self.env.uid, self.env.context
         )
-        self.attachment = self.env.ref(
-            "attachment_queue.attachment_queue_demo"
-        )
+        self.attachment = self.env.ref("attachment_queue.attachment_queue_demo")
 
     def tearDown(self):
         self.registry.leave_test_mode()
@@ -31,9 +29,18 @@ class TestAttachmentBaseQueue(TransactionCase):
             attach = self.attachment.with_env(new_env)
             self.assertEqual(attach.state, "done")
 
-    def test_set_done(self):
-        """Test set_done manually
+    def test_run(self):
+        """Test run manually
         """
         self.assertEqual(self.attachment.state, "pending")
-        self.attachment.set_done()
+        self.attachment.run()
         self.assertEqual(self.attachment.state, "done")
+
+    def test_cancel_reset_pending(self):
+        """Test cancel manually
+        """
+        self.assertEqual(self.attachment.state, "pending")
+        self.attachment.cancel()
+        self.assertEqual(self.attachment.state, "cancel")
+        self.attachment.reset_pending()
+        self.assertEqual(self.attachment.state, "pending")
