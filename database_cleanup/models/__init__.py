@@ -7,3 +7,5 @@ from . import purge_data
 from . import purge_menus
 from . import create_indexes
 from . import purge_properties
+from . import purge_actions
+from . import purge_views
