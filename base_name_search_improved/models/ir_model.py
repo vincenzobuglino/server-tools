@@ -126,7 +126,6 @@ def patch_name_search():
 
 
 class Base(models.AbstractModel):
-
     _inherit = "base"
 
     # TODO perhaps better to create only the field when enabled on the model
@@ -237,7 +236,6 @@ class IrModel(models.Model):
                 raise ValidationError(_("Name Search Domain must be a list of tuples"))
 
     def _register_hook(self):
-
         _logger.info("Patching BaseModel for Smart Search")
 
         for model in self.sudo().search(self.ids or []):
