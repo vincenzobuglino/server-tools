@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record model="ir.ui.view" id="view_email_server_form">
+        <field name="model">fetchmail.server</field>
+        <field name="inherit_id" ref="fetchmail.view_email_server_form"/>
+        <field name="arch" type="xml">
+            <field name="date" position="after">
+                <field name="company_id" widget="selection" groups="base.group_multi_company"/>
+            </field>
+            <xpath expr="//field[@name='configuration']/.." position="after">
+            		<group string="Attachment Conditions" name="conditions">
+            		    <field name="attachment_condition_ids" colspan="4" nolabel="1"/>
+      	        </group>
+            </xpath>
+        </field>
+    </record>
+
+   <!-- Views and menus for the new object fetchmail.attachment.condition -->
+    <record id="view_fetchmail_attachment_condition_tree" model="ir.ui.view">
+        <field name="name">view_fetchmail_attachment_condition_tree</field>
+        <field name="model">fetchmail.attachment.condition</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="email_from"/>
+                <field name="email_subject"/>
+                <field name="file_extension"/>
+                <field name="server_id" invisible="1"/>
+            </tree>
+       </field>
+    </record>
+
+    <record id="view_fetchmail_attachment_condition_form" model="ir.ui.view">
+        <field name="name">view_fetchmail_attachment_condition_form</field>
+        <field name="model">fetchmail.attachment.condition</field>
+        <field name="arch" type="xml">
+            <form string="Attachment Condition requirements">
+                <sheet>
+                  <div class="oe_title">
+                      <label class="oe_edit_only" for="name" />
+                      <h1>
+                          <field name="name"/>
+                      </h1>
+                  </div>
+                    <group string="Requirements" class="col-12 col-lg-6">
+                        <field name="email_from" />
+                        <field name="email_subject" />
+                        <field name="file_extension" />
+                    </group>
+                    <group string="Attachment process" class="col-12 col-lg-6">
+                        <field name="file_type" />
+                        <field name="server_id" invisible="1" />
+                    </group>
+                </sheet>
+            </form>
+       </field>
+    </record>
+
+</odoo>
