@@ -255,7 +255,7 @@ class AuditlogRule(models.Model):
                     if fname not in fields_list:
                         continue
                     new_values[new_record.id][fname] = field.convert_to_read(
-                        new_record[fname], new_record)
+                        new_record.sudo()[fname], new_record.sudo())
             rule_model.sudo().create_logs(
                 self.env.uid, self._name, new_records.ids,
                 'create', None, new_values, {'log_type': log_type})
