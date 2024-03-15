@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+        <record id="base_merge_wizard_form" model="ir.ui.view">
+            <field name='name'>base.merge.wizard.form</field>
+            <field name='model'>base.merge.wizard</field>
+            <field name='arch' type='xml'>
+                <form string='Merge Wizard'>
+                    <separator string="Merge the following records"/>
+                    <group col="2">
+                        <p class="oe_grey" colspan="2">
+                            The below selected records will be merged into
+                            the target records. All relations to other models
+                            would refer to the target record.
+                        </p>
+                        <field name="model_id"/>
+                        <field name="data" widget="char" invisible="True"/>
+                        <field name="target_id" domain="[('id', 'in', source_ids[0][2])]"/>
+                        <field name="source_ids"/>
+                    </group>
+                    <footer>
+                        <button type="object" name="action_merge" class="btn-primary" string="Merge" />
+                        <button type="special" special="cancel" class="btn-default" string="Cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <!-- Tree View for merger model -->
+        <record id="base_merge_tree" model="ir.ui.view">
+            <field name="name">base.merge.form</field>
+            <field name="model">base.merge.model</field>
+            <field name="type">tree</field>
+            <field name= "arch" type = "xml">
+                <tree string="Record merger enabled" editable="true" create ="true">
+                    <field name="model_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- and required menu and action stuff to enable it -->
+        <act_window
+            id="action_base_merge_model"
+            name="Models enabled"
+            res_model="base.merge.model"
+            view_type="form"
+            view_mode="tree,form"
+            view_id="base_merge_tree"
+            limit="50"
+           />
+
+        <menuitem
+            id="menu_base_merge_model_configuration_top"
+            name="Base Merge"
+            parent="base.menu_custom"
+            sequence="10"
+            groups="base.group_erp_manager"
+            />
+        <menuitem
+            id="menu_base_merge_model_configuration"
+            parent="menu_base_merge_model_configuration_top"
+            action="action_base_merge_model"
+            />
+</odoo>
