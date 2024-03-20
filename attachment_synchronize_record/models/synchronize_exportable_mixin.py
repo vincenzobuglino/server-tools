@@ -56,7 +56,7 @@ class SynchronizeExportableMixin(models.AbstractModel):
     def synchronize_export(self, raise_error=False):
         attachments = self.env["attachment.queue"]
         for records, data in self._get_export_data(raise_error=raise_error):
-            vals = records._format_to_exportfile(data)
+            vals = records._prepare_aq_vals(data)
             attachment = self.env["attachment.queue"].create(vals)
             records.track_export(attachment)
             attachments |= attachment
@@ -72,13 +72,19 @@ class SynchronizeExportableMixin(models.AbstractModel):
     def _get_export_task(self):
         raise NotImplementedError
 
-    # TODO cleanup this code
-    # We should just have a method that return the data
-    # and a generic one that return the vals
-    def _format_to_exportfile(self, data):
-        return self._format_to_exportfile_csv(data)
+    def _prepare_aq_vals(self, data):
+        task = self._get_export_task()
+        return {
+            "name": self._get_export_name(),
+            "datas": base64.b64encode(self._prepare_aq_data(data)),
+            "task_id": task.id,
+            "file_type": task.file_type,
+        }
 
-    def _format_to_exportfile_csv(self, data):
+    def _prepare_aq_data(self, data):
+        return self._prepare_aq_data_csv(data)
+
+    def _prepare_aq_data_csv(self, data):
         csv_file = StringIO()
         delimiter = self.env.context.get("csv_delimiter") or ";"
         writer = csv.DictWriter(
@@ -87,13 +93,7 @@ class SynchronizeExportableMixin(models.AbstractModel):
         for row in data:
             writer.writerow(row)
         csv_file.seek(0)
-        task = self._get_export_task()
-        return {
-            "name": self._get_export_name(),
-            "datas": base64.b64encode(csv_file.getvalue().encode("utf-8")),
-            "task_id": task.id,
-            "file_type": task.file_type,
-        }
+        return csv_file.getvalue().encode("utf-8")
 
     def _get_export_name(self):
         raise NotImplementedError
